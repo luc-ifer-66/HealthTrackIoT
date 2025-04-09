@@ -63,13 +63,12 @@ export default function DevicesPage() {
             Manage your ThingSpeak-connected health monitoring devices
           </p>
         </div>
+        <Button onClick={() => setIsAddDeviceOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Device
+        </Button>
+        
         <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Device
-            </Button>
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>Add ThingSpeak Device</DialogTitle>
@@ -97,12 +96,10 @@ export default function DevicesPage() {
             You haven't connected any health monitoring devices yet. Add a device
             to start monitoring your vital signs.
           </p>
-          <DialogTrigger asChild>
-            <Button onClick={() => setIsAddDeviceOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Your First Device
-            </Button>
-          </DialogTrigger>
+          <Button onClick={() => setIsAddDeviceOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Your First Device
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
