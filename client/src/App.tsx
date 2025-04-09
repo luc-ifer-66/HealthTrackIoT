@@ -10,6 +10,7 @@ import HomePage from "@/pages/home-page";
 import VitalsPage from "@/pages/vitals-page";
 import AlertsPage from "@/pages/alerts-page";
 import SettingsPage from "@/pages/settings-page";
+import DevicesPage from "@/pages/devices-page";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/vitals" component={VitalsPage} />
       <ProtectedRoute path="/alerts" component={AlertsPage} />
+      <ProtectedRoute path="/devices" component={DevicesPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />

@@ -1,7 +1,7 @@
 import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Home, UserRound, Heart, Bell, Settings, LogOut } from "lucide-react";
+import { Home, UserRound, Heart, Bell, Settings, LogOut, Wifi } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -98,6 +98,15 @@ export default function Sidebar({
               {alertCount}
             </Badge>
           )}
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          className="flex items-center w-full justify-start gap-3 px-4 py-2.5 hover:bg-primary/5 hover:text-primary text-muted-foreground"
+          onClick={() => navigateTo("/devices")}
+        >
+          <Wifi className="h-5 w-5" />
+          <span>Devices</span>
         </Button>
         
         <Button 
