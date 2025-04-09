@@ -7,7 +7,10 @@ import {
   InsertDevice,
   alerts,
   Alert,
-  InsertAlert
+  InsertAlert,
+  thresholds,
+  Threshold,
+  InsertThreshold
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { db } from "./db";
@@ -46,6 +49,10 @@ export interface IStorage {
   
   // Patient-caregiver methods
   getCaregiverPatients(caregiverId: number): Promise<User[]>;
+  
+  // Threshold methods
+  getUserThreshold(userId: number): Promise<Threshold | undefined>;
+  createOrUpdateThreshold(threshold: InsertThreshold): Promise<Threshold>;
 
   // Session store
   sessionStore: any; // Using any for SessionStore to avoid TypeScript errors
@@ -55,18 +62,22 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private devices: Map<number, Device>;
   private alerts: Map<number, Alert>;
+  private thresholds: Map<number, Threshold>;
   sessionStore: any; // Using any for the session store
   private currentUserId: number;
   private currentDeviceId: number;
   private currentAlertId: number;
+  private currentThresholdId: number;
 
   constructor() {
     this.users = new Map();
     this.devices = new Map();
     this.alerts = new Map();
+    this.thresholds = new Map();
     this.currentUserId = 1;
     this.currentDeviceId = 1;
     this.currentAlertId = 1;
+    this.currentThresholdId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // 24 hours
     });
@@ -175,6 +186,40 @@ export class MemStorage implements IStorage {
       (user) => user.patientId === caregiverId,
     );
   }
+
+  // Threshold methods
+  async getUserThreshold(userId: number): Promise<Threshold | undefined> {
+    return Array.from(this.thresholds.values()).find(
+      (threshold) => threshold.userId === userId
+    );
+  }
+
+  async createOrUpdateThreshold(insertThreshold: InsertThreshold): Promise<Threshold> {
+    // Check if a threshold for this user already exists
+    const existingThreshold = await this.getUserThreshold(insertThreshold.userId);
+    
+    if (existingThreshold) {
+      // Update existing threshold
+      const updatedThreshold: Threshold = {
+        ...existingThreshold,
+        ...insertThreshold,
+        updatedAt: new Date()
+      };
+      this.thresholds.set(existingThreshold.id, updatedThreshold);
+      return updatedThreshold;
+    } else {
+      // Create new threshold
+      const id = this.currentThresholdId++;
+      const now = new Date();
+      const threshold: Threshold = {
+        ...insertThreshold,
+        id,
+        updatedAt: now
+      };
+      this.thresholds.set(id, threshold);
+      return threshold;
+    }
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -262,6 +307,39 @@ export class DatabaseStorage implements IStorage {
   async getCaregiverPatients(caregiverId: number): Promise<User[]> {
     const results = await db.select().from(users).where(eq(users.patientId, caregiverId));
     return results as User[];
+  }
+
+  // Threshold methods
+  async getUserThreshold(userId: number): Promise<Threshold | undefined> {
+    const [threshold] = await db.select().from(thresholds).where(eq(thresholds.userId, userId));
+    return threshold as Threshold;
+  }
+
+  async createOrUpdateThreshold(insertThreshold: InsertThreshold): Promise<Threshold> {
+    // Check if a threshold for this user already exists
+    const existingThreshold = await this.getUserThreshold(insertThreshold.userId);
+    
+    if (existingThreshold) {
+      // Update existing threshold
+      const [updatedThreshold] = await db
+        .update(thresholds)
+        .set({ 
+          ...insertThreshold,
+          updatedAt: new Date() 
+        })
+        .where(eq(thresholds.id, existingThreshold.id))
+        .returning();
+        
+      return updatedThreshold as Threshold;
+    } else {
+      // Create new threshold
+      const [threshold] = await db
+        .insert(thresholds)
+        .values(insertThreshold)
+        .returning();
+        
+      return threshold as Threshold;
+    }
   }
 }
 

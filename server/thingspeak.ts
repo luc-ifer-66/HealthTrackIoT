@@ -38,13 +38,36 @@ export async function getHistoricalData(channelId: string, apiKey: string, days 
 
 /**
  * Check if vital signs are outside of normal ranges and create alerts
+ * If custom thresholds exist for the user, those will be used instead of default ranges
  */
 export async function checkForAlerts(
   userId: number, 
   data: ThingSpeakResponse, 
-  ranges: VitalRanges = VITAL_RANGES
+  defaultRanges: VitalRanges = VITAL_RANGES
 ): Promise<void> {
   if (!data.feeds || data.feeds.length === 0) return;
+  
+  // Try to get custom thresholds for this user
+  const userThreshold = await storage.getUserThreshold(userId);
+  
+  // Create ranges object based on user's custom thresholds or defaults
+  const ranges: VitalRanges = {
+    heartRate: {
+      min: userThreshold?.heartRateMin ? parseFloat(userThreshold.heartRateMin) : defaultRanges.heartRate.min,
+      max: userThreshold?.heartRateMax ? parseFloat(userThreshold.heartRateMax) : defaultRanges.heartRate.max,
+      unit: defaultRanges.heartRate.unit
+    },
+    oxygen: {
+      min: userThreshold?.oxygenMin ? parseFloat(userThreshold.oxygenMin) : defaultRanges.oxygen.min,
+      max: defaultRanges.oxygen.max,
+      unit: defaultRanges.oxygen.unit
+    },
+    temperature: {
+      min: userThreshold?.temperatureMin ? parseFloat(userThreshold.temperatureMin) : defaultRanges.temperature.min,
+      max: userThreshold?.temperatureMax ? parseFloat(userThreshold.temperatureMax) : defaultRanges.temperature.max,
+      unit: defaultRanges.temperature.unit
+    }
+  };
   
   const latestReading = data.feeds[0];
   

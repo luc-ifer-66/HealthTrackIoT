@@ -1,14 +1,15 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Calendar, Download } from "lucide-react";
+import { Loader2, Calendar, Download, AlertCircle } from "lucide-react";
 import { ThingSpeakResponse, Alert, User } from "@shared/schema";
 import Header from "@/components/dashboard/header";
 import Sidebar from "@/components/dashboard/sidebar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HistoricalChart from "@/components/dashboard/historical-chart";
+import ThresholdForm from "@/components/dashboard/threshold-form";
 import { Separator } from "@/components/ui/separator";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -175,9 +176,12 @@ export default function VitalsPage() {
             
             {/* Tabs for different views */}
             <Tabs defaultValue="charts" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="charts">Historical Charts</TabsTrigger>
                 <TabsTrigger value="data">Data Table</TabsTrigger>
+                {user?.role === "caregiver" && selectedPatientId && (
+                  <TabsTrigger value="thresholds">Alert Thresholds</TabsTrigger>
+                )}
               </TabsList>
               
               {/* Charts View */}
@@ -296,6 +300,33 @@ export default function VitalsPage() {
                   </CardContent>
                 </Card>
               </TabsContent>
+              
+              {/* Thresholds Management View for caregivers */}
+              {user?.role === "caregiver" && selectedPatientId && (
+                <TabsContent value="thresholds">
+                  <Card className="bg-neutral-dark shadow-lg">
+                    <CardHeader>
+                      <CardTitle>Patient Alert Thresholds</CardTitle>
+                      <CardDescription>
+                        Customize the alert thresholds for this patient
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-amber-400">
+                          <AlertCircle className="h-5 w-5" />
+                          <p className="text-sm">
+                            Setting custom thresholds will override the default alert values for this patient. 
+                            Alerts will be triggered when vital signs go outside the specified ranges.
+                          </p>
+                        </div>
+                        
+                        <ThresholdForm patientId={selectedPatientId} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </main>

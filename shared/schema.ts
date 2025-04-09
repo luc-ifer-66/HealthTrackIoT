@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, pgEnum, numeric } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -40,10 +40,31 @@ export const alerts = pgTable("alerts", {
   severity: text("severity").notNull(), // 'critical', 'warning', 'info'
 });
 
+// Alert thresholds schema for custom patient thresholds
+export const thresholds = pgTable("thresholds", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Heart rate thresholds
+  heartRateMin: numeric("heart_rate_min").notNull().default("60"),
+  heartRateMax: numeric("heart_rate_max").notNull().default("100"),
+  
+  // Oxygen saturation thresholds
+  oxygenMin: numeric("oxygen_min").notNull().default("95"),
+  
+  // Temperature thresholds
+  temperatureMin: numeric("temperature_min").notNull().default("36.5"),
+  temperatureMax: numeric("temperature_max").notNull().default("37.5"),
+  
+  // Threshold updates
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   devices: many(devices, { relationName: "user_devices" }),
   alerts: many(alerts, { relationName: "user_alerts" }),
+  threshold: one(thresholds, { relationName: "user_threshold" }),
   caregiver: one(users, {
     relationName: "patient_caregiver",
     fields: [users.patientId],
@@ -72,6 +93,14 @@ export const alertsRelations = relations(alerts, ({ one }) => ({
   }),
 }));
 
+export const thresholdsRelations = relations(thresholds, ({ one }) => ({
+  user: one(users, {
+    relationName: "user_threshold",
+    fields: [thresholds.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -88,6 +117,11 @@ export const insertAlertSchema = createInsertSchema(alerts).omit({
   timestamp: true,
 });
 
+export const insertThresholdSchema = createInsertSchema(thresholds).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Login schema
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -101,6 +135,8 @@ export type Device = typeof devices.$inferSelect;
 export type InsertDevice = z.infer<typeof insertDeviceSchema>;
 export type Alert = typeof alerts.$inferSelect;
 export type InsertAlert = z.infer<typeof insertAlertSchema>;
+export type Threshold = typeof thresholds.$inferSelect;
+export type InsertThreshold = z.infer<typeof insertThresholdSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
 
 // ThingSpeak data types

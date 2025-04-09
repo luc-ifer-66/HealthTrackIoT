@@ -4,12 +4,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Save, PlusCircle, User, Bell, Shield, Smartphone } from "lucide-react";
+import { Loader2, Save, PlusCircle, User, Bell, Shield, Smartphone, AlertCircle } from "lucide-react";
 import Header from "@/components/dashboard/header";
 import Sidebar from "@/components/dashboard/sidebar";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Alert } from "@shared/schema";
+import ThresholdForm from "@/components/dashboard/threshold-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -267,11 +268,12 @@ export default function SettingsPage() {
             
             {/* Settings Tabs */}
             <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 mb-6">
+              <TabsList className="grid w-full grid-cols-5 mb-6">
                 <TabsTrigger value="profile">Profile</TabsTrigger>
                 <TabsTrigger value="security">Security</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="devices">Devices</TabsTrigger>
+                <TabsTrigger value="thresholds">Thresholds</TabsTrigger>
               </TabsList>
               
               {/* Profile Tab */}
@@ -748,6 +750,28 @@ export default function SettingsPage() {
                         <li>Program your ESP32 to send data to your ThingSpeak channel</li>
                         <li>Add the device here using the channel ID and read API key</li>
                       </ol>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Thresholds Tab */}
+              <TabsContent value="thresholds">
+                <Card className="bg-neutral-dark shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Alert Thresholds</CardTitle>
+                    <CardDescription>
+                      Customize your vital sign alert thresholds
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        Set custom thresholds for when you receive alerts about your vital signs. If a vital sign goes outside the range you define, 
+                        you'll receive an alert. Leave the default values if you're unsure.
+                      </p>
+                      
+                      <ThresholdForm />
                     </div>
                   </CardContent>
                 </Card>

@@ -8,7 +8,7 @@ import {
   checkForAlerts 
 } from "./thingspeak";
 import { z } from "zod";
-import { insertDeviceSchema } from "@shared/schema";
+import { insertDeviceSchema, insertThresholdSchema, VITAL_RANGES } from "@shared/schema";
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -163,6 +163,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(data);
     } catch (err) {
       res.status(500).json({ message: (err as Error).message });
+    }
+  });
+
+  // Threshold management routes
+  app.get("/api/thresholds", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const threshold = await storage.getUserThreshold(userId);
+      
+      if (!threshold) {
+        // Return default thresholds if no custom values are set
+        return res.json({
+          userId,
+          heartRateMin: VITAL_RANGES.heartRate.min.toString(),
+          heartRateMax: VITAL_RANGES.heartRate.max.toString(),
+          oxygenMin: VITAL_RANGES.oxygen.min.toString(),
+          temperatureMin: VITAL_RANGES.temperature.min.toString(),
+          temperatureMax: VITAL_RANGES.temperature.max.toString()
+        });
+      }
+      
+      res.json(threshold);
+    } catch (err) {
+      res.status(500).json({ message: (err as Error).message });
+    }
+  });
+
+  app.post("/api/thresholds", isAuthenticated, async (req, res) => {
+    try {
+      // Add userId to the threshold data
+      const thresholdData = {
+        ...req.body,
+        userId: req.user!.id
+      };
+      
+      const validatedData = insertThresholdSchema.parse(thresholdData);
+      const threshold = await storage.createOrUpdateThreshold(validatedData);
+      res.status(201).json(threshold);
+    } catch (err) {
+      res.status(400).json({ message: (err as Error).message });
+    }
+  });
+
+  // Get thresholds for a specific patient (caregiver only)
+  app.get("/api/patients/:id/thresholds", isAuthenticated, async (req, res) => {
+    try {
+      if (req.user!.role !== 'caregiver') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const patientId = parseInt(req.params.id);
+      const patients = await storage.getCaregiverPatients(req.user!.id);
+      
+      // Check if patient belongs to this caregiver
+      const isPatientOfCaregiver = patients.some(p => p.id === patientId);
+      if (!isPatientOfCaregiver) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const threshold = await storage.getUserThreshold(patientId);
+      
+      if (!threshold) {
+        // Return default thresholds if no custom values are set
+        return res.json({
+          userId: patientId,
+          heartRateMin: VITAL_RANGES.heartRate.min.toString(),
+          heartRateMax: VITAL_RANGES.heartRate.max.toString(),
+          oxygenMin: VITAL_RANGES.oxygen.min.toString(),
+          temperatureMin: VITAL_RANGES.temperature.min.toString(),
+          temperatureMax: VITAL_RANGES.temperature.max.toString()
+        });
+      }
+      
+      res.json(threshold);
+    } catch (err) {
+      res.status(500).json({ message: (err as Error).message });
+    }
+  });
+
+  // Update thresholds for a specific patient (caregiver only)
+  app.post("/api/patients/:id/thresholds", isAuthenticated, async (req, res) => {
+    try {
+      if (req.user!.role !== 'caregiver') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const patientId = parseInt(req.params.id);
+      const patients = await storage.getCaregiverPatients(req.user!.id);
+      
+      // Check if patient belongs to this caregiver
+      const isPatientOfCaregiver = patients.some(p => p.id === patientId);
+      if (!isPatientOfCaregiver) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Add patientId to the threshold data
+      const thresholdData = {
+        ...req.body,
+        userId: patientId
+      };
+      
+      const validatedData = insertThresholdSchema.parse(thresholdData);
+      const threshold = await storage.createOrUpdateThreshold(validatedData);
+      res.status(201).json(threshold);
+    } catch (err) {
+      res.status(400).json({ message: (err as Error).message });
     }
   });
 
