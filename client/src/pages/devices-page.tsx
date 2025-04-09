@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Device } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { HomeButton } from "@/components/ui/home-button";
 import {
   Dialog,
   DialogContent,
@@ -57,16 +58,26 @@ export default function DevicesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Connected Devices</h1>
-          <p className="text-muted-foreground">
-            Manage your ThingSpeak-connected health monitoring devices
-          </p>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:block">
+            <HomeButton variant="secondary" size="sm" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">Connected Devices</h1>
+            <p className="text-muted-foreground">
+              Manage your ThingSpeak-connected health monitoring devices
+            </p>
+          </div>
         </div>
-        <Button onClick={() => setIsAddDeviceOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Device
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="block sm:hidden">
+            <HomeButton variant="secondary" size="sm" />
+          </div>
+          <Button onClick={() => setIsAddDeviceOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Device
+          </Button>
+        </div>
         
         <Dialog open={isAddDeviceOpen} onOpenChange={setIsAddDeviceOpen}>
           <DialogContent className="sm:max-w-[500px]">
