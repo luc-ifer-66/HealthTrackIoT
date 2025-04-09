@@ -15,6 +15,13 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { queryClient } from "./db";
 import createMemoryStore from "memorystore";
+import pkg from 'pg';
+const { Pool } = pkg;
+
+// Create a separate pg pool for connect-pg-simple
+const pgPool = new Pool({
+  connectionString: process.env.DATABASE_URL
+});
 
 const MemoryStore = createMemoryStore(session);
 const PostgresSessionStore = connectPgSimple(session);
@@ -175,7 +182,7 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
-      pool: queryClient as any, // Cast to any to avoid type errors
+      pool: pgPool,
       createTableIfMissing: true,
     });
   }

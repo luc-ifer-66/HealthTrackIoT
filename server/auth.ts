@@ -29,8 +29,13 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
+  // Ensure we have a session secret
+  if (!process.env.SESSION_SECRET) {
+    process.env.SESSION_SECRET = "healthcare-monitoring-secret";
+  }
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "healthcare-monitoring-secret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
