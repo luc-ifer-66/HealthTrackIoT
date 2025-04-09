@@ -9,10 +9,15 @@ import {
   Alert,
   InsertAlert
 } from "@shared/schema";
+import { eq, and, desc } from "drizzle-orm";
+import { db } from "./db";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { queryClient } from "./db";
 import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPgSimple(session);
 
 export interface IStorage {
   // User methods
@@ -36,14 +41,14 @@ export interface IStorage {
   getCaregiverPatients(caregiverId: number): Promise<User[]>;
 
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any for SessionStore to avoid TypeScript errors
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private devices: Map<number, Device>;
   private alerts: Map<number, Alert>;
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Using any for the session store
   private currentUserId: number;
   private currentDeviceId: number;
   private currentAlertId: number;
@@ -80,9 +85,15 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const now = new Date();
+    // Create user with all required fields
     const user: User = { 
-      ...insertUser, 
-      id, 
+      id,
+      username: insertUser.username,
+      password: insertUser.password,
+      email: insertUser.email,
+      name: insertUser.name,
+      role: insertUser.role || 'patient',
+      patientId: insertUser.patientId || null,
       createdAt: now 
     };
     this.users.set(id, user);
@@ -129,7 +140,8 @@ export class MemStorage implements IStorage {
     const alert: Alert = {
       ...insertAlert,
       id,
-      timestamp: now
+      timestamp: now,
+      isRead: insertAlert.isRead || false
     };
     this.alerts.set(id, alert);
     return alert;
@@ -158,4 +170,93 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  sessionStore: any; // Using any for session store type
+
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({
+      pool: queryClient as any, // Cast to any to avoid type errors
+      createTableIfMissing: true,
+    });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user as User;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user as User;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user as User;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user as User;
+  }
+
+  // Device methods
+  async getDevice(id: number): Promise<Device | undefined> {
+    const [device] = await db.select().from(devices).where(eq(devices.id, id));
+    return device as Device;
+  }
+
+  async getUserDevices(userId: number): Promise<Device[]> {
+    const results = await db.select().from(devices).where(eq(devices.userId, userId));
+    return results as Device[];
+  }
+
+  async createDevice(insertDevice: InsertDevice): Promise<Device> {
+    const [device] = await db.insert(devices).values(insertDevice).returning();
+    return device as Device;
+  }
+
+  // Alert methods
+  async getAlert(id: number): Promise<Alert | undefined> {
+    const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
+    return alert as Alert;
+  }
+
+  async getUserAlerts(userId: number): Promise<Alert[]> {
+    const results = await db
+      .select()
+      .from(alerts)
+      .where(eq(alerts.userId, userId))
+      .orderBy(desc(alerts.timestamp));
+    return results as Alert[];
+  }
+
+  async createAlert(insertAlert: InsertAlert): Promise<Alert> {
+    const [alert] = await db.insert(alerts).values(insertAlert).returning();
+    return alert as Alert;
+  }
+
+  async markAlertAsRead(id: number): Promise<Alert> {
+    const [alert] = await db
+      .update(alerts)
+      .set({ isRead: true })
+      .where(eq(alerts.id, id))
+      .returning();
+      
+    if (!alert) {
+      throw new Error("Alert not found");
+    }
+    
+    return alert as Alert;
+  }
+
+  // Patient-caregiver methods
+  async getCaregiverPatients(caregiverId: number): Promise<User[]> {
+    const results = await db.select().from(users).where(eq(users.patientId, caregiverId));
+    return results as User[];
+  }
+}
+
+// Export the DatabaseStorage for production use
+export const storage = new DatabaseStorage();

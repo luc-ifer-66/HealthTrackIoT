@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -38,6 +39,38 @@ export const alerts = pgTable("alerts", {
   isRead: boolean("is_read").default(false).notNull(),
   severity: text("severity").notNull(), // 'critical', 'warning', 'info'
 });
+
+// Define relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  devices: many(devices, { relationName: "user_devices" }),
+  alerts: many(alerts, { relationName: "user_alerts" }),
+  caregiver: one(users, {
+    relationName: "patient_caregiver",
+    fields: [users.patientId],
+    references: [users.id],
+  }),
+  patients: many(users, {
+    relationName: "patient_caregiver",
+    fields: [users.id],
+    references: [users.patientId],
+  }),
+}));
+
+export const devicesRelations = relations(devices, ({ one }) => ({
+  user: one(users, {
+    relationName: "user_devices",
+    fields: [devices.userId],
+    references: [users.id],
+  }),
+}));
+
+export const alertsRelations = relations(alerts, ({ one }) => ({
+  user: one(users, {
+    relationName: "user_alerts",
+    fields: [alerts.userId],
+    references: [users.id],
+  }),
+}));
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
