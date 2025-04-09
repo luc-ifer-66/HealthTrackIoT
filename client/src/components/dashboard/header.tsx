@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Menu, Bell, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { HomeButton } from "@/components/ui/home-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +49,9 @@ export default function Header({ user, onSidebarToggle, alertCount }: HeaderProp
           <div className="flex items-center">
             <span className="text-primary text-2xl font-bold">Health</span>
             <span className="text-white text-2xl font-bold">Monitor</span>
+          </div>
+          <div className="hidden md:block ml-4">
+            <HomeButton variant="secondary" size="sm" />
           </div>
         </div>
         

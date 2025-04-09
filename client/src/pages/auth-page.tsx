@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { HomeButton } from "@/components/ui/home-button";
 import { 
   Form, 
   FormControl, 
@@ -87,6 +88,10 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background to-neutral-dark">
+      <div className="absolute top-4 left-4">
+        <HomeButton variant="secondary" size="sm" />
+      </div>
+      
       <Card className="bg-neutral-dark w-full max-w-md">
         <CardContent className="pt-6">
           <div className="text-center mb-8">

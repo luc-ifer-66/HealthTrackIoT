@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { HomeButton } from "@/components/ui/home-button";
 
 interface SidebarProps {
   user: User | null;
@@ -149,14 +150,19 @@ export default function Sidebar({
       )}
       
       <div className="mt-auto pt-4">
-        <Button 
-          variant="ghost" 
-          className="flex items-center w-full justify-center gap-2 px-4 py-2.5 hover:bg-primary/5 hover:text-primary text-muted-foreground"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-5 w-5" />
-          <span>Logout</span>
-        </Button>
+        <div className="flex flex-col gap-2">
+          <div className="px-4 mb-2">
+            <HomeButton variant="secondary" size="sm" className="w-full" />
+          </div>
+          <Button 
+            variant="ghost" 
+            className="flex items-center w-full justify-center gap-2 px-4 py-2.5 hover:bg-primary/5 hover:text-primary text-muted-foreground"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Logout</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
